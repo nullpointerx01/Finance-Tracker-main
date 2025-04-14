@@ -65,19 +65,21 @@
             z-index: 999;
             opacity: 0;
             cursor: pointer;
+            transition: transform 0.3s ease, filter 0.3s ease;
         }
 
         #corner-robot:hover {
-            transform: scale(1.1) rotate(5deg);
-            animation: shake 0.5s ease-in-out;
+            transform: scale(1.2) rotate(5deg);
+            animation: wiggle 0.8s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px #00bfff);
         }
 
-        @keyframes shake {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(2deg); }
-            50% { transform: rotate(-2deg); }
-            75% { transform: rotate(2deg); }
-            100% { transform: rotate(0deg); }
+        @keyframes wiggle {
+            0% { transform: rotate(0deg) scale(1.2); }
+            25% { transform: rotate(2deg) scale(1.2); }
+            50% { transform: rotate(-2deg) scale(1.2); }
+            75% { transform: rotate(2deg) scale(1.2); }
+            100% { transform: rotate(0deg) scale(1.2); }
         }
 
         #chatbot-modal {
@@ -165,6 +167,34 @@
                 text-shadow: 0 0 10px #007bff, 0 0 20px #007bff, 0 0 30px #007bff, 0 0 40px #007bff;
             }
         }
+
+        /* Navbar hover effects */
+        .navbar-nav .nav-link {
+            transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            transform: scale(1.1);
+            color: #00bfff !important;
+            text-shadow: 0 0 8px rgba(0, 191, 255, 0.7);
+        }
+
+        /* Footer roll effect */
+        .footer-text {
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        .footer-text span {
+            display: inline-block;
+            position: relative;
+            transition: transform 0.5s ease;
+        }
+
+        .footer-text:hover span {
+            transform: translateY(100%);
+        }
     </style>
 </head>
 <body>
@@ -229,7 +259,7 @@
 <!-- Footer -->
 <footer class="footer bg-dark text-light">
     <div class="container">
-        <p>&copy; 2025 T₹ACK  | Developed by ALOK </p>
+        <p class="footer-text"><span>&copy; 2025 T₹ACK | Developed by ALOK</span></p>
     </div>
 </footer>
 
