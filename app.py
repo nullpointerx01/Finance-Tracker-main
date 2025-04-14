@@ -5,6 +5,7 @@ import google
 import google.generativeai as genai
 from google.generativeai import configure
 import logging
+import requests
 
 # --- Configure Logging ---
 logging.basicConfig(level=logging.DEBUG)
@@ -17,6 +18,7 @@ model = genai.GenerativeModel("gemini-1.5-flash-latest")
 # --- Flask App Setup ---
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+RECAPTCHA_SECRET_KEY = "6LemwhgrAAAAAIq7cB0iUnixtSn5QmBcyRG_JmeJ"
 
 # --- SQLite Database Setup ---
 DATABASE = 'finance_tracker.db'
@@ -69,7 +71,37 @@ def chat():
 
     return jsonify({"response": reply})
 
-# --- Routes ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        recaptcha_response = request.form.get('g-recaptcha-response')
+        payload = {
+            'secret': RECAPTCHA_SECRET_KEY,
+            'response': recaptcha_response
+        }
+        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+        result = r.json()
+
+        if not result.get('success'):
+            flash('Invalid CAPTCHA. Please try again.', 'danger')
+            return redirect(url_for('login'))
+
+        username = request.form['username']
+        password = request.form['password']
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute("SELECT id, username FROM users WHERE username = ? AND password = ?", (username, password))
+        user = c.fetchone()
+        conn.close()
+        if user:
+            session['user_id'] = user[0]
+            session['username'] = user[1]
+            flash('Login successful!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password. Please try again.', 'error')
+    return render_template('login.html')
+
 @app.route('/')
 def index():
     if 'username' in session:
@@ -85,24 +117,6 @@ def index():
         conn.close()
         return render_template('index.html', username=username, total_amount=total_amount, total_upi=total_upi, total_cash=total_cash)
     return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        conn = sqlite3.connect(DATABASE)
-        c = conn.cursor()
-        c.execute("SELECT id, username FROM users WHERE username = ? AND password = ?", (username, password))
-        user = c.fetchone()
-        conn.close()
-        if user:
-            session['user_id'] = user[0]
-            session['username'] = user[1]
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid username or password. Please try again.', 'error')
-    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
@@ -210,20 +224,15 @@ def statistics():
     if user_id:
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-
-        # Total expenses
         c.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ?", (user_id,))
         total_expenses = c.fetchone()[0] or 0
 
-        # Expense by category
         c.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY category", (user_id,))
         expense_by_category = dict(c.fetchall())
 
-        # Top spending categories
         c.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 5", (user_id,))
         top_spending_categories = dict(c.fetchall())
 
-        # Monthly comparison
         c.execute("SELECT amount, date FROM transactions WHERE user_id = ?", (user_id,))
         transactions = c.fetchall()
 
@@ -236,7 +245,7 @@ def statistics():
 
         current_month_total = 0
         previous_month_total = 0
-        
+
         for amount, date_str in transactions:
             try:
                 date_obj = datetime.strptime(date_str, "%Y-%m-%d")
@@ -258,6 +267,6 @@ def statistics():
             total_expenses=round(total_expenses, 2),
             expense_by_category=expense_by_category,
         )
-            
+
 if __name__ == '__main__':
     app.run(debug=True)
