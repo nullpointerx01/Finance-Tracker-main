@@ -92,11 +92,14 @@ Statistics - Finance Tracker
     </div>
     {% endif %}
 
+    <!-- 3D Background Canvas -->
+    <div id="backgroundCanvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></div>
+</div>
 
-
-<!-- Chart.js -->
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const categoryLabels = JSON.parse('{{ expense_by_category.keys() | list | tojson | safe }}');
@@ -126,6 +129,56 @@ Statistics - Finance Tracker
                     }
                 }
             }
+        });
+
+        // 3D Interactive Background with Mouse Movement
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('backgroundCanvas').appendChild(renderer.domElement);
+
+        const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const particles = [];
+
+        for (let i = 0; i < 500; i++) {
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.set(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+            scene.add(particle);
+            particles.push(particle);
+        }
+
+        camera.position.z = 3;
+
+        // Mouse control for camera movement
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            const mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            camera.position.x = mouseX * 2;
+            camera.position.y = -mouseY * 2;
+            camera.lookAt(scene.position);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particles.forEach(particle => {
+                particle.position.z += 0.01;
+                if (particle.position.z > 2) particle.position.z = -2;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle resizing
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
         });
     });
 </script>
