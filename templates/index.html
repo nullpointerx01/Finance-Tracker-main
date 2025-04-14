@@ -8,7 +8,7 @@ Home - Finance Tracker
 <div class="row mt-4">
     <h2>Welcome, {{ username }}!</h2>
     <div class="col-md-4">
-        <div class="card">
+        <div class="card hover-effect">
             <div class="card-body">
                 <h5 class="card-title">Total UPI Transactions</h5>
                 <h6 class="card-subtitle mb-2 text-muted">₹{{ total_upi }}</h6>
@@ -16,7 +16,7 @@ Home - Finance Tracker
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card">
+        <div class="card hover-effect">
             <div class="card-body">
                 <h5 class="card-title">Total Cash Transactions</h5>
                 <h6 class="card-subtitle mb-2 text-muted">₹{{ total_cash }}</h6>
@@ -24,7 +24,7 @@ Home - Finance Tracker
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card">
+        <div class="card hover-effect">
             <div class="card-body">
                 <h5 class="card-title">Total Amount</h5>
                 <h6 class="card-subtitle mb-2 text-muted">₹{{ total_amount }}</h6>
@@ -32,7 +32,7 @@ Home - Finance Tracker
         </div>
     </div>
     <div class="col-md-6 mt-4">
-        <div class="card border-primary">
+        <div class="card border-primary hover-effect">
             <div class="card-header text-center border-primary">
                 Amount Spent Each Day (This Month)
             </div>
@@ -42,7 +42,7 @@ Home - Finance Tracker
         </div>
     </div>
     <div class="col-md-6 mt-4">
-        <div class="card border-primary">
+        <div class="card border-primary hover-effect">
             <div class="card-header text-center border-primary">
                 Amount Spent Each Day (This Month)
             </div>
@@ -52,6 +52,41 @@ Home - Finance Tracker
         </div>
     </div>
 </div>
+
+<style>
+    body {
+        /* Light gradient background */
+        background: linear-gradient(to bottom right, #E0F7FA, #B2EBF2);
+        color: #333; /* Dark text for contrast */
+        font-family: Arial, sans-serif; /* Optional: Set a font family */
+    }
+
+    /* Card styles */
+    .card {
+        background-color: #ffffff; /* White background for cards */
+        border: 1px solid #e0e0e0; /* Light border for cards */
+    }
+
+    /* Hover effect for cards */
+    .hover-effect {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Optional: Add hover effect for canvas elements */
+    canvas {
+        transition: transform 0.3s;
+    }
+
+    canvas:hover {
+        transform: scale(1.05);
+    }
+</style>
+
 <script>
     // Function to fetch data for monthly spending
     function fetchMonthlySpendingData() {
@@ -130,9 +165,6 @@ Home - Finance Tracker
     document.addEventListener('DOMContentLoaded', () => {
         fetchDailySpendingData();
     });
-
-    
 </script>
-
 
 {% endblock %}

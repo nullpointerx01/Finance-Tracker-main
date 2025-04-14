@@ -8,45 +8,80 @@ Statistics - Finance Tracker
 <div class="container mt-4">
     <!-- Total Expenses -->
     <div class="card mb-4">
-        <div class="card-header">
-            Total Expenses
-        </div>
+        <div class="card-header">Total Expenses</div>
         <div class="card-body">
             <h5 class="card-title">₹{{ total_expenses }}</h5>
         </div>
     </div>
 
-<!-- Expense Breakdown by Category -->
-<div class="card mb-4">
-    <div class="card-header">
-        Expense Breakdown by Category
+    <!-- Monthly Comparison -->
+    {% if previous_month_total is not none and current_month_total is not none %}
+    <div class="card mb-4">
+        <div class="card-header">Monthly Comparison</div>
+        <div class="card-body">
+            <p>Previous Month: ₹{{ previous_month_total }}</p>
+            <p>Current Month: ₹{{ current_month_total }}</p>
+            <p><strong>Change: ₹{{ difference }} ({{ percentage_change }}%)</strong></p>
+        </div>
     </div>
-    <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>Amount (₹)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for category, amount in expense_by_category.items() %}
-                <tr>
-                    <td>{{ category }}</td>
-                    <td>₹{{ amount }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+    {% endif %}
 
+    <!-- Budget Progress Bars -->
+    {% if budgets %}
+    <div class="card mb-4">
+        <div class="card-header">Budget Tracker</div>
+        <div class="card-body">
+            {% for b in budgets %}
+            {% set percentage = (b.spent / b.limit * 100) | round(0) %}
+            <p><strong>{{ b.category }}:</strong> ₹{{ b.spent }} / ₹{{ b.limit }}</p>
+            <div class="progress mb-3">
+                <div 
+                    class="progress-bar {% if b.spent > b.limit %}bg-danger{% else %}bg-success{% endif %}" 
+                    role="progressbar"
+                    aria-valuenow="{{ b.spent }}" 
+                    aria-valuemin="0" 
+                    aria-valuemax="{{ b.limit }}">
+                    {{ percentage }}%
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Expense Breakdown by Category -->
+    {% if expense_by_category %}
+    <div class="card mb-4">
+        <div class="card-header">Expense Breakdown by Category</div>
+        <div class="card-body">
+            <div style="position: relative; height: 300px; max-width: 400px; margin: auto;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <hr>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category, amount in expense_by_category.items() %}
+                    <tr>
+                        <td>{{ category }}</td>
+                        <td>₹{{ amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Top Spending Categories -->
+    {% if top_spending_categories %}
     <div class="card mb-4">
-        <div class="card-header">
-            Top Spending Categories
-        </div>
+        <div class="card-header">Top Spending Categories</div>
         <div class="card-body">
             <ul class="list-group">
                 {% for category, amount in top_spending_categories.items() %}
@@ -55,5 +90,52 @@ Statistics - Finance Tracker
             </ul>
         </div>
     </div>
+    {% endif %}
+
+    <!-- Chatbot Insight -->
+    {% if chatbot_insight %}
+    <div class="card mb-4">
+        <div class="card-header">Chatbot Insight</div>
+        <div class="card-body">
+            <p>{{ chatbot_insight }}</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- Chart.js -->
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const categoryLabels = JSON.parse('{{ expense_by_category.keys() | list | tojson | safe }}');
+        const categoryValues = JSON.parse('{{ expense_by_category.values() | list | tojson | safe }}');
+
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: 'Expenses by Category',
+                    data: categoryValues,
+                    backgroundColor: [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e',
+                        '#e74a3b', '#858796', '#fd7e14', '#20c997'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
