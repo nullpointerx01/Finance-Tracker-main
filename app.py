@@ -1,41 +1,24 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash,jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime
 import sqlite3
-from collections import defaultdict
+import google
 import google.generativeai as genai
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-import os
-from flask import Flask, request, jsonify, render_template
-import google.generativeai as genai
-from google.generativeai import configure, list_models
+from google.generativeai import configure
+import logging
 
-configure(api_key="AIzaSyAbD14tBlyDBLfdARcQ6SNYs3Q-t3Zmw_k")
+# --- Configure Logging ---
+logging.basicConfig(level=logging.DEBUG)
 
-models = list_models()
-for model in models:
-    print(model.name)
+# --- Configure Gemini ---
+api_key = "AIzaSyD-Iu29MM0A19TcmQvFh3v6wJR_C-IivRU"
+configure(api_key=api_key)
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
-
+# --- Flask App Setup ---
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-# Configure Gemini
-genai.configure(api_key="AIzaSyAbD14tBlyDBLfdARcQ6SNYs3Q-t3Zmw_k")
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
-@app.route("/chatbot", methods=["POST"])
-def chat():
-    data = request.get_json()
-    user_message = data.get("message", "")
-    
-    try:
-        response = model.generate_content(user_message)
-        reply = response.text
-    except Exception as e:
-        reply = "Error: " + str(e)
 
-    return jsonify({"response": reply})
-
-
-# SQLite database setup
+# --- SQLite Database Setup ---
 DATABASE = 'finance_tracker.db'
 
 def init_db():
@@ -67,28 +50,41 @@ def init_db():
 
 init_db()
 
+@app.route("/chatbot", methods=["POST"])
+def chat():
+    data = request.get_json()
+    user_message = data.get("message", "")
+    logging.debug(f"User message received: {user_message}")
+    
+    try:
+        response = model.generate_content(user_message)
+        reply = response.text
+        logging.debug(f"Gemini response: {reply}")
+    except google.generativeai.exceptions.GoogleGenerativeAIError as e:
+        logging.error(f"Gemini API error: {str(e)}")
+        reply = "Sorry, there was an issue with the chatbot. Please try again later."
+    except Exception as e:
+        logging.error(f"Unexpected error: {str(e)}")
+        reply = "An unexpected error occurred. Please try again later."
+
+    return jsonify({"response": reply})
+
+# --- Routes ---
 @app.route('/')
 def index():
     if 'username' in session:
         user_id = session['user_id']
         username = session['username']
-        
-        # Fetch transactions from the database
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         c.execute("SELECT * FROM transactions WHERE user_id = ?", (user_id,))
         transactions = c.fetchall()
-        
-        # Compute the sum of transaction amounts for each payment method
         total_amount = sum(transaction[2] for transaction in transactions)
         total_upi = sum(transaction[2] for transaction in transactions if transaction[6] == 'UPI')
         total_cash = sum(transaction[2] for transaction in transactions if transaction[6] == 'Cash')
-        
         conn.close()
-
         return render_template('index.html', username=username, total_amount=total_amount, total_upi=total_upi, total_cash=total_cash)
     return redirect(url_for('login'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -101,18 +97,17 @@ def login():
         user = c.fetchone()
         conn.close()
         if user:
-            session['user_id'] = user[0]  # Store user_id in session
-            session['username'] = user[1]  # Store username in session
+            session['user_id'] = user[0]
+            session['username'] = user[1]
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password. Please try again.', 'error')
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)  # Clear user_id from session
-    session.pop('username', None)  # Clear username from session
+    session.pop('user_id', None)
+    session.pop('username', None)
     flash('You have been logged out.', 'success')
     return redirect(url_for('login'))
 
@@ -126,56 +121,48 @@ def register():
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE username = ?", (username,))
-        existing_user = c.fetchone()
-        if existing_user:
+        if c.fetchone():
             flash('Username already exists. Please choose a different one.', 'error')
         else:
             c.execute("INSERT INTO users (username, email, phone, password) VALUES (?, ?, ?, ?)",
                       (username, email, phone, password))
             conn.commit()
-            conn.close()
             flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('login'))
+        conn.close()
+        return redirect(url_for('login'))
     return render_template('register.html')
 
 @app.route('/transactions')
 def transactions():
     if 'username' in session:
-        user_id = session['user_id']  # Assuming you store user_id in session
-        username = session['username']
+        user_id = session['user_id']
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         c.execute("SELECT * FROM transactions WHERE user_id = ?", (user_id,))
         transactions = c.fetchall()
         conn.close()
-
-        return render_template('transaction.html', transactions=transactions, username=username)
-    else:
-        return redirect(url_for('login'))
-
-
+        return render_template('transaction.html', transactions=transactions, username=session['username'])
+    return redirect(url_for('login'))
 
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():
     if 'username' in session:
-        user_id = session['user_id']  # Assuming you store user_id in session
+        user_id = session['user_id']
         date = request.form['date']
         category = request.form['category']
-        amount = request.form['amount']
+        amount = float(request.form['amount'])
         payment_method = request.form['payment_method']
         description = request.form['notes']
-
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute("INSERT INTO transactions (user_id, date, category, amount, payment_method, description) VALUES (?, ?, ?, ?, ?, ?)",
-                  (user_id, date, category, amount, payment_method, description))
+        c.execute('''
+            INSERT INTO transactions (user_id, amount, category, date, description, payment_method)
+            VALUES (?, ?, ?, ?, ?, ?)''', (user_id, amount, category, date, description, payment_method))
         conn.commit()
         conn.close()
-
         return redirect(url_for('transactions'))
-    else:
-        return redirect(url_for('login'))
-    
+    return redirect(url_for('login'))
+
 @app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
 def delete_transaction(transaction_id):
     if 'username' in session:
@@ -193,78 +180,84 @@ def delete_transaction(transaction_id):
 def daily_spending_data():
     if 'username' in session:
         user_id = session['user_id']
-        
-        # Fetch daily spending data from the database
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         c.execute("SELECT date, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY date", (user_id,))
         data = c.fetchall()
         conn.close()
-
-        # Format data for Chart.js
         labels = [row[0] for row in data]
         amounts = [row[1] for row in data]
-
         return jsonify({'labels': labels, 'amounts': amounts})
-    else:
-        return redirect(url_for('login'))
+    return redirect(url_for('login'))
 
 @app.route('/monthly_spending_data')
 def monthly_spending_data():
     if 'username' in session:
         user_id = session['user_id']
-        
-        # Fetch monthly spending data from the database
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
-        c.execute("SELECT strftime('%Y-%m', date) AS month, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY month", (user_id,))
+        c.execute("SELECT strftime('%Y-%m', date), SUM(amount) FROM transactions WHERE user_id = ? GROUP BY strftime('%Y-%m', date)", (user_id,))
         data = c.fetchall()
         conn.close()
-
-        # Format data for Chart.js
         labels = [datetime.strptime(row[0], '%Y-%m').strftime('%b %Y') for row in data]
         amounts = [row[1] for row in data]
-
         return jsonify({'labels': labels, 'amounts': amounts})
-    else:
-        return redirect(url_for('login'))
-    
-    
-from flask import session
+    return redirect(url_for('login'))
 
 @app.route('/statistics')
 def statistics():
-    # Retrieve the user's identifier from the session
-    user_id = session.get('user_id')  # Assuming you store user ID in the session
-    
+    user_id = session.get('user_id')
     if user_id:
-        # Fetch data for statistics page for the logged-in user from the database
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
 
-        # Fetch total expenses for the logged-in user
+        # Total expenses
         c.execute("SELECT SUM(amount) FROM transactions WHERE user_id = ?", (user_id,))
-        total_expenses_result = c.fetchone()
-        total_expenses = total_expenses_result[0] if total_expenses_result else 0
+        total_expenses = c.fetchone()[0] or 0
 
-        # Fetch expense breakdown by category for the logged-in user
+        # Expense by category
         c.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY category", (user_id,))
-        expense_by_category_result = c.fetchall()
-        expense_by_category = dict(expense_by_category_result) if expense_by_category_result else {}
+        expense_by_category = dict(c.fetchall())
 
-        # Fetch top spending categories for the logged-in user
+        # Top spending categories
         c.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 5", (user_id,))
-        top_spending_categories_result = c.fetchall()
-        top_spending_categories = dict(top_spending_categories_result) if top_spending_categories_result else {}
+        top_spending_categories = dict(c.fetchall())
+
+        # Monthly comparison
+        c.execute("SELECT amount, date FROM transactions WHERE user_id = ?", (user_id,))
+        transactions = c.fetchall()
+
+        today = datetime.today()
+        current_month = today.month
+        current_year = today.year
+
+        previous_month = current_month - 1 if current_month > 1 else 12
+        previous_year = current_year if current_month > 1 else current_year - 1
+
+        current_month_total = 0
+        previous_month_total = 0
+        
+        for amount, date_str in transactions:
+            try:
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                if date_obj.year == current_year and date_obj.month == current_month:
+                    current_month_total += amount
+                elif date_obj.year == previous_year and date_obj.month == previous_month:
+                    previous_month_total += amount
+            except Exception as e:
+                logging.error(f"Date parsing error: {e}")
+                continue
+
+        difference = current_month_total - previous_month_total
+        percentage_change = round((difference / previous_month_total * 100), 2) if previous_month_total != 0 else 0
 
         conn.close()
 
-        # Render the statistics page template with the fetched data
-        return render_template('statistics.html', total_expenses=total_expenses, expense_by_category=expense_by_category,
-                               top_spending_categories=top_spending_categories)
-    else:
-        # Redirect to login page if user is not logged in
-        return redirect(url_for('login'))
-
+        return render_template(
+            'statistics.html',
+            total_expenses=round(total_expenses, 2),
+            expense_by_category=expense_by_category,
+        )
+            
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

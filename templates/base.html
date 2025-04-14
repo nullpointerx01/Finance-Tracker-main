@@ -227,7 +227,6 @@
         setTimeout(function () {
             document.getElementById("loading-screen").classList.add("hidden");
             setTimeout(() => document.getElementById("loading-screen").style.display = "none", 500);
-
             gsap.to("#corner-robot", { opacity: 1, duration: 1.2, ease: "power2.out" });
             typeGreeting("Hi! How can I assist you today?");
             setTimeout(() => {
@@ -300,7 +299,8 @@
                 body: JSON.stringify({ message })
             });
             const data = await res.json();
-            appendMessage(data.reply || "Sorry, something went wrong.", "bot");
+            // Fixed this line to use 'response' instead of 'reply'
+            appendMessage(data.response || "Sorry, something went wrong.", "bot");
         } catch (err) {
             appendMessage("Error contacting the chatbot server.", "bot");
             console.error(err);
