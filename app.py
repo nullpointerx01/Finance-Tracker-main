@@ -18,7 +18,7 @@ model = genai.GenerativeModel("gemini-1.5-flash-latest")
 # --- Flask App Setup ---
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-RECAPTCHA_SECRET_KEY = "6LeexRgrAAAAAH6Uee9tLqUPiT8tsQRtln_dTfYh"
+RECAPTCHA_SECRET_KEY = "6LeOyxgrAAAAAENL11oae2bYaEKlqNODM0vgQe47"
 
 # --- SQLite Database Setup ---
 DATABASE = 'finance_tracker.db'
