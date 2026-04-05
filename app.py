@@ -16,11 +16,13 @@ logging.basicConfig(level=logging.DEBUG)
 # --- Configure Gemini ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = None
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and not GEMINI_API_KEY.startswith("AIzaSyB2YWPH"): # Basic placeholder check
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
         logging.error(f"Failed to initialize Gemini Client: {e}")
+elif GEMINI_API_KEY and GEMINI_API_KEY.startswith("AIzaSyB2YWPH"):
+    logging.warning("Placeholder GEMINI_API_KEY detected. AI features will stay disabled until a real key is provided.")
 else:
     logging.warning("GEMINI_API_KEY not found. AI features will be disabled.")
 
@@ -90,7 +92,10 @@ def chat():
         full_message = f"{system_instruction}\n{context}\nUser: {user_message}"
 
         if not client:
-            yield "AI features are currently disabled. Please ensure the GEMINI_API_KEY is properly set in the Environment Variables."
+            if not GEMINI_API_KEY or "AIzaSyB2YWPH" in str(GEMINI_API_KEY):
+                yield "AI features are currently disabled. Please ensure a valid GEMINI_API_KEY is set in your .env file."
+            else:
+                yield "AI client failed to initialize. Please check your API key and connection."
             return
 
         try:
@@ -357,7 +362,7 @@ def insights():
             weekday_spending[date_obj.weekday()] += amount
         except: continue
 
-    ai_suggestion = "AI Intelligence is not configured. Please add GEMINI_API_KEY to your settings to enable this feature."
+    ai_suggestion = "AI Intelligence is not configured. Please add a valid GEMINI_API_KEY to your settings to enable this."
     if client:
         summary_str = f"Total Expense: ₹{total_expenses}. Categories: {category_totals}."
         prompt = f"Analyze these user finances: {summary_str}. Provide 3 short, catchy financial tips and a Health Rating (Poor/Fair/Good/Excellent). Return as a friendly string with bullet points."
@@ -368,7 +373,13 @@ def insights():
             )
             ai_suggestion = response.text
         except Exception as e:
-            ai_suggestion = "AI Analysis is currently unavailable. Please check back later!"
+            error_msg = str(e)
+            if "exhausted" in error_msg.lower() or "quota" in error_msg.lower():
+                ai_suggestion = "AI quota exceeded! Please wait a moment or check your API limit at Google AI Studio."
+            elif "401" in error_msg or "403" in error_msg:
+                ai_suggestion = "Invalid API Key. Please update your GEMINI_API_KEY in the .env settings."
+            else:
+                ai_suggestion = "AI Analysis is currently unavailable. (Technical Error: " + error_msg[:30] + "...)"
             logging.error(f"Gemini Insights Error: {str(e)}")
 
     return render_template(
