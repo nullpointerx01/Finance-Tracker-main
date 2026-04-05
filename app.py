@@ -100,7 +100,7 @@ def chat():
 
         try:
             response_stream = client.models.generate_content_stream(
-                model='gemini-2.0-flash',
+                model='gemini-3-flash-preview',
                 contents=full_message
             )
             for chunk in response_stream:
@@ -368,7 +368,7 @@ def insights():
         prompt = f"Analyze these user finances: {summary_str}. Provide 3 short, catchy financial tips and a Health Rating (Poor/Fair/Good/Excellent). Return as a friendly string with bullet points."
         try:
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-3-flash-preview",
                 contents=prompt
             )
             ai_suggestion = response.text
