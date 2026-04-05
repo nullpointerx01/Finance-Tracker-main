@@ -1,24 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, stream_with_context, Response
+import os
+from dotenv import load_dotenv
 from datetime import datetime
 import sqlite3
-import google
-import google.generativeai as genai
-from google.generativeai import configure
+from google import genai
 import logging
 import requests
+
+# --- Configure Environment ---
+load_dotenv()
 
 # --- Configure Logging ---
 logging.basicConfig(level=logging.DEBUG)
 
 # --- Configure Gemini ---
-api_key = "AIzaSyALv42q7DQmYPdLkOLAOzOeZvxl_YrZsuU"
-configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # --- Flask App Setup ---
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
-RECAPTCHA_SECRET_KEY = "6LeOyxgrAAAAAENL11oae2bYaEKlqNODM0vgQe47"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 
 # --- SQLite Database Setup ---
 DATABASE = 'finance_tracker.db'
@@ -58,34 +59,62 @@ def chat():
     user_message = data.get("message", "")
     logging.debug(f"User message received: {user_message}")
     
-    try:
-        response = model.generate_content(user_message)
-        reply = response.text
-        logging.debug(f"Gemini response: {reply}")
-    except google.generativeai.exceptions.GoogleGenerativeAIError as e:
-        logging.error(f"Gemini API error: {str(e)}")
-        reply = "Sorry, there was an issue with the chatbot. Please try again later."
-    except Exception as e:
-        logging.error(f"Unexpected error: {str(e)}")
-        reply = "An unexpected error occurred. Please try again later."
+    def generate():
+        # --- Add Context for Smart Advice ---
+        user_id = session.get('user_id')
+        context = ""
+        if user_id:
+            conn = sqlite3.connect(DATABASE)
+            c = conn.cursor()
+            # Get latest 30 transactions for context
+            c.execute("SELECT amount, category, date, description FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 30", (user_id,))
+            rows = c.fetchall()
+            conn.close()
+            
+            if rows:
+                context = "\nRecent transactions for context:\n"
+                for row in rows:
+                    context += f"- ₹{row[0]} for {row[1]} on {row[2]} ({row[3] or 'No details'})\n"
+        
+        # Build the final prompt with a system instruction
+        system_instruction = f"You are a helpful Financial Advisor for this Finance Tracker app. Below is a summary of the user's recent spending. Use this to provide personalized advice if asked. Keep responses concise and friendly."
+        full_message = f"{system_instruction}\n{context}\nUser: {user_message}"
 
-    return jsonify({"response": reply})
+        try:
+            response_stream = client.models.generate_content_stream(
+                model='gemini-flash-latest',
+                contents=full_message
+            )
+            for chunk in response_stream:
+                if chunk.text:
+                    yield chunk.text
+        except Exception as e:
+            logging.error(f"Chatbot streaming error: {str(e)}")
+            yield "Sorry, there was an issue with the chatbot. Please try again later."
+
+    return Response(stream_with_context(generate()), mimetype='text/plain')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        recaptcha_response = request.form.get('g-recaptcha-response')
-        payload = {
-            'secret': RECAPTCHA_SECRET_KEY,
-            'response': recaptcha_response
-        }
-        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-        result = r.json()
-
-        if not result.get('success'):
-            flash('Invalid CAPTCHA. Please try again.', 'danger')
-            return redirect(url_for('login'))
-
+        is_localhost = request.host.split(':')[0] in ['localhost', '127.0.0.1']
+        
+        if not is_localhost:
+            recaptcha_response = request.form.get('g-recaptcha-response')
+            payload = {
+                'secret': RECAPTCHA_SECRET_KEY,
+                'response': recaptcha_response
+            }
+            try:
+                r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+                result = r.json()
+                if not result.get('success'):
+                    flash('Invalid CAPTCHA. Please try again.', 'danger')
+                    return redirect(url_for('login'))
+            except Exception as e:
+                logging.error(f"ReCaptcha error: {str(e)}")
+                # Optionally handle connection errors here
+        
         username = request.form['username']
         password = request.form['password']
         conn = sqlite3.connect(DATABASE)
@@ -100,7 +129,8 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password. Please try again.', 'error')
-    return render_template('login.html')
+    is_localhost = request.host.split(':')[0] in ['localhost', '127.0.0.1']
+    return render_template('login.html', skip_captcha=is_localhost)
 
 @app.route('/')
 def index():
@@ -214,6 +244,20 @@ def monthly_spending_data():
         data = c.fetchall()
         conn.close()
         labels = [datetime.strptime(row[0], '%Y-%m').strftime('%b %Y') for row in data]
+        amounts = [row[1] for row in data]
+        return jsonify({'labels': labels, 'amounts': amounts})
+    return redirect(url_for('login'))
+
+@app.route('/category_spending_data')
+def category_spending_data():
+    if 'username' in session:
+        user_id = session['user_id']
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute("SELECT category, SUM(amount) FROM transactions WHERE user_id = ? GROUP BY category", (user_id,))
+        data = c.fetchall()
+        conn.close()
+        labels = [row[0] for row in data]
         amounts = [row[1] for row in data]
         return jsonify({'labels': labels, 'amounts': amounts})
     return redirect(url_for('login'))

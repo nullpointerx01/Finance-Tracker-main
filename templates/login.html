@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
 
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- reCAPTCHA -->
+  {% if not skip_captcha %}
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  {% endif %}
 
   <!-- GSAP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
 
   <!-- Animate.css -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
   <!-- Vanta.js + Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js" defer></script>
@@ -49,8 +52,15 @@
     }
 
     @keyframes borderPulse {
-      0%, 100% { border-color: rgba(255, 255, 255, 0.1); }
-      50% { border-color: rgba(255, 255, 255, 0.4); }
+
+      0%,
+      100% {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      50% {
+        border-color: rgba(255, 255, 255, 0.4);
+      }
     }
 
     .btn-gradient {
@@ -70,10 +80,12 @@
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 1; /* Make sure particles stay behind other elements */
+      z-index: 1;
+      /* Make sure particles stay behind other elements */
     }
   </style>
 </head>
+
 <body id="vanta-bg" class="min-h-screen relative">
 
   <!-- Particle.js Background -->
@@ -81,43 +93,48 @@
 
   <!-- Login Card -->
   <div class="flex justify-center items-center min-h-screen p-4 relative z-10">
-    <div id="login-card" class="glass w-full max-w-md p-8 rounded-xl opacity-0 animate__animated animate__fadeInDown" data-tilt data-tilt-max="5" data-tilt-speed="400">
+    <div id="login-card" class="glass w-full max-w-md p-8 rounded-xl opacity-0 animate__animated animate__fadeInDown"
+      data-tilt data-tilt-max="5" data-tilt-speed="400">
       <h1 class="text-3xl font-bold text-white mb-6 text-center">Login</h1>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="p-4 mb-4 rounded-lg {% if category == 'success' %}bg-green-800 text-green-100{% elif category == 'danger' %}bg-red-800 text-red-100{% elif category == 'warning' %}bg-yellow-800 text-yellow-100{% else %}bg-blue-800 text-blue-100{% endif %}">
-              {{ message }}
-            </div>
-          {% endfor %}
-        {% endif %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div
+        class="p-4 mb-4 rounded-lg {% if category == 'success' %}bg-green-800 text-green-100{% elif category == 'danger' %}bg-red-800 text-red-100{% elif category == 'warning' %}bg-yellow-800 text-yellow-100{% else %}bg-blue-800 text-blue-100{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
       {% endwith %}
 
       <form action="{{ url_for('login') }}" method="post" id="login-form">
         <div class="mb-4">
           <label for="username" class="block text-white text-sm font-medium mb-2">Username</label>
-          <input type="text" id="username" name="username" required 
-                 class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-white placeholder-opacity-70">
+          <input type="text" id="username" name="username" required
+            class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-white placeholder-opacity-70">
         </div>
         <div class="mb-4">
           <label for="password" class="block text-white text-sm font-medium mb-2">Password</label>
-          <input type="password" id="password" name="password" required 
-                 class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-white placeholder-opacity-70">
+          <input type="password" id="password" name="password" required
+            class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-white placeholder-opacity-70">
         </div>
 
         <!-- reCAPTCHA -->
+        {% if not skip_captcha %}
         <div class="mb-6 flex justify-center">
           <div class="g-recaptcha" data-sitekey="6LeOyxgrAAAAAAcWhZHPUX_MtCDGpOOLoEDh5Lsa"></div>
         </div>
+        {% endif %}
 
-        <button type="submit" class="w-full px-4 py-2 text-white font-medium btn-gradient rounded-lg shadow-md transition-all duration-300">
+        <button type="submit"
+          class="w-full px-4 py-2 text-white font-medium btn-gradient rounded-lg shadow-md transition-all duration-300">
           Login
         </button>
       </form>
 
       <p class="mt-6 text-center text-white text-opacity-80 text-sm">
-        Don't have an account? 
+        Don't have an account?
         <a href="{{ url_for('register') }}" class="font-medium text-white hover:text-white underline">Register</a>
       </p>
     </div>
@@ -228,4 +245,5 @@
     });
   </script>
 </body>
+
 </html>

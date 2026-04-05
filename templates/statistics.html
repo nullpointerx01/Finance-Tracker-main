@@ -35,12 +35,8 @@ Statistics - Finance Tracker
             {% set percentage = (b.spent / b.limit * 100) | round(0) %}
             <p><strong>{{ b.category }}:</strong> ₹{{ b.spent }} / ₹{{ b.limit }}</p>
             <div class="progress mb-3">
-                <div 
-                    class="progress-bar {% if b.spent > b.limit %}bg-danger{% else %}bg-success{% endif %}" 
-                    role="progressbar"
-                    aria-valuenow="{{ b.spent }}" 
-                    aria-valuemin="0" 
-                    aria-valuemax="{{ b.limit }}">
+                <div class="progress-bar {% if b.spent > b.limit %}bg-danger{% else %}bg-success{% endif %}"
+                    role="progressbar" aria-valuenow="{{ b.spent }}" aria-valuemin="0" aria-valuemax="{{ b.limit }}">
                     {{ percentage }}%
                 </div>
             </div>

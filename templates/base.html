@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Finance Tracker{% endblock %}</title>
-    
+
     <!-- Bootstrap & Fonts -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
@@ -16,11 +17,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 
     <style>
-        * { font-family: 'Poppins', sans-serif; }
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
 
-        body { display: flex; flex-direction: column; min-height: 100vh; margin: 0; overflow-x: hidden; }
-        .container { flex: 1; }
-        footer { background-color: #f8f9fa; padding: 20px 0; text-align: center; width: 100%; }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            flex: 1;
+        }
+
+        footer {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+            text-align: center;
+            width: 100%;
+        }
 
         #tsparticles {
             position: fixed;
@@ -34,22 +52,35 @@
 
         #loading-screen {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(255, 255, 255, 0.9);
-            display: flex; justify-content: center; align-items: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 9999;
             opacity: 1;
             transition: opacity 0.5s ease-in-out;
         }
 
         #loading-screen img {
-            width: 80px; height: 80px;
+            width: 80px;
+            height: 80px;
             animation: pulse 1.5s infinite ease-in-out alternate;
         }
 
         @keyframes pulse {
-            from { transform: scale(1); opacity: 0.7; }
-            to { transform: scale(1.1); opacity: 1; }
+            from {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+
+            to {
+                transform: scale(1.1);
+                opacity: 1;
+            }
         }
 
         #loading-screen.hidden {
@@ -75,11 +106,25 @@
         }
 
         @keyframes wiggle {
-            0% { transform: rotate(0deg) scale(1.2); }
-            25% { transform: rotate(2deg) scale(1.2); }
-            50% { transform: rotate(-2deg) scale(1.2); }
-            75% { transform: rotate(2deg) scale(1.2); }
-            100% { transform: rotate(0deg) scale(1.2); }
+            0% {
+                transform: rotate(0deg) scale(1.2);
+            }
+
+            25% {
+                transform: rotate(2deg) scale(1.2);
+            }
+
+            50% {
+                transform: rotate(-2deg) scale(1.2);
+            }
+
+            75% {
+                transform: rotate(2deg) scale(1.2);
+            }
+
+            100% {
+                transform: rotate(0deg) scale(1.2);
+            }
         }
 
         #chatbot-modal {
@@ -163,6 +208,7 @@
             from {
                 text-shadow: 0 0 5px #007bff, 0 0 10px #007bff, 0 0 15px #007bff, 0 0 20px #007bff;
             }
+
             to {
                 text-shadow: 0 0 10px #007bff, 0 0 20px #007bff, 0 0 30px #007bff, 0 0 40px #007bff;
             }
@@ -197,198 +243,221 @@
         }
     </style>
 </head>
+
 <body>
 
-<!-- Particle Background -->
-<div id="tsparticles"></div>
+    <!-- Particle Background -->
+    <div id="tsparticles"></div>
 
-<!-- Loading Screen -->
-<div id="loading-screen">
-    <img src="{{ url_for('static', filename='loader.gif') }}" alt="Loading...">
-</div>
-
-<!-- Robot Icon -->
-<img id="corner-robot" src="{{ url_for('static', filename='robot.gif') }}" alt="Chatbot">
-
-<!-- Chatbot Modal -->
-<div id="chatbot-modal">
-    <div id="chatbot-header">
-        Chatbot <span id="chatbot-close">&times;</span>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <img src="{{ url_for('static', filename='loader.gif') }}" alt="Loading...">
     </div>
-    <div id="chatbot-body">
-        <p id="greeting"></p>
-    </div>
-    <div id="chatbot-footer">
-        <input type="text" id="chatbot-input" placeholder="Type a message...">
-        <button id="chatbot-send">Send</button>
-    </div>
-</div>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">T₹ACK </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
-            <ul class="navbar-nav mb-2 mb-lg-0">
-                <li class="nav-item me-lg-3"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
-                <li class="nav-item me-lg-3"><a class="nav-link" href="{{ url_for('transactions') }}">Transactions</a></li>
-                <li class="nav-item me-lg-3"><a class="nav-link" href="{{ url_for('statistics') }}">Statistics</a></li>
-            </ul>
+    <!-- Robot Icon -->
+    <img id="corner-robot" src="{{ url_for('static', filename='robot.gif') }}" alt="Chatbot">
+
+    <!-- Chatbot Modal -->
+    <div id="chatbot-modal">
+        <div id="chatbot-header">
+            Chatbot <span id="chatbot-close">&times;</span>
         </div>
-        <div class="navbar-nav ms-auto">
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                    {{username}}
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+        <div id="chatbot-body">
+            <p id="greeting"></p>
+        </div>
+        <div id="chatbot-footer">
+            <input type="text" id="chatbot-input" placeholder="Type a message...">
+            <button id="chatbot-send">Send</button>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">T₹ACK </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item me-lg-3"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item me-lg-3"><a class="nav-link"
+                            href="{{ url_for('transactions') }}">Transactions</a></li>
+                    <li class="nav-item me-lg-3"><a class="nav-link" href="{{ url_for('statistics') }}">Statistics</a>
+                    </li>
                 </ul>
             </div>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        {{username}}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<!-- Main Content -->
-<div class="container">
-    {% block content %}{% endblock %}
-</div>
-
-<!-- Footer -->
-<footer class="footer bg-dark text-light">
+    <!-- Main Content -->
     <div class="container">
-        <p class="footer-text"><span>&copy; 2025 T₹ACK | Developed by ALOK</span></p>
+        {% block content %}{% endblock %}
     </div>
-</footer>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Footer -->
+    <footer class="footer bg-dark text-light">
+        <div class="container">
+            <p class="footer-text"><span>&copy; 2025 T₹ACK </span></p>
+        </div>
+    </footer>
 
-<script>
-    window.addEventListener("load", function () {
-        setTimeout(function () {
-            document.getElementById("loading-screen").classList.add("hidden");
-            setTimeout(() => document.getElementById("loading-screen").style.display = "none", 500);
-            gsap.to("#corner-robot", { opacity: 1, duration: 1.2, ease: "power2.out" });
-            typeGreeting("Hi! How can I assist you today?");
-            setTimeout(() => {
-                gsap.from(".navbar-brand", {
-                    y: -50,
-                    opacity: 0,
-                    duration: 1,
-                    ease: "bounce.out",
-                    onComplete: () => {
-                        document.querySelector(".navbar-brand").classList.add("glow");
-                    }
-                });
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        window.addEventListener("load", function () {
+            setTimeout(function () {
+                document.getElementById("loading-screen").classList.add("hidden");
+                setTimeout(() => document.getElementById("loading-screen").style.display = "none", 500);
+                gsap.to("#corner-robot", { opacity: 1, duration: 1.2, ease: "power2.out" });
+                typeGreeting("Hi! How can I assist you today?");
+                setTimeout(() => {
+                    gsap.from(".navbar-brand", {
+                        y: -50,
+                        opacity: 0,
+                        duration: 1,
+                        ease: "bounce.out",
+                        onComplete: () => {
+                            document.querySelector(".navbar-brand").classList.add("glow");
+                        }
+                    });
+                }, 1000);
             }, 1000);
-        }, 1000);
-    });
+        });
 
-    function typeGreeting(text) {
-        const greeting = document.getElementById("greeting");
-        let index = 0;
-        greeting.innerHTML = "";
-        const typing = setInterval(() => {
-            if (index < text.length) {
-                greeting.innerHTML += text[index++];
-            } else {
-                clearInterval(typing);
-            }
-        }, 40);
-    }
-
-    const robot = document.getElementById("corner-robot");
-    const modal = document.getElementById("chatbot-modal");
-    const close = document.getElementById("chatbot-close");
-
-    robot.addEventListener("click", () => {
-        modal.style.display = "flex";
-        gsap.fromTo(modal, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" });
-    });
-
-    close.addEventListener("click", () => {
-        gsap.to(modal, { y: 100, opacity: 0, duration: 0.4, ease: "power3.in", onComplete: () => modal.style.display = "none" });
-    });
-
-    const input = document.getElementById("chatbot-input");
-    const sendBtn = document.getElementById("chatbot-send");
-    const chatBody = document.getElementById("chatbot-body");
-
-    function appendMessage(text, sender) {
-        const msg = document.createElement("div");
-        msg.textContent = text;
-        msg.classList.add("mb-2");
-        msg.style.textAlign = sender === "user" ? "right" : "left";
-        msg.style.color = sender === "user" ? "#007bff" : "#333";
-        chatBody.appendChild(msg);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }
-
-    async function sendMessage() {
-        const message = input.value.trim();
-        if (!message) return;
-
-        appendMessage(message, "user");
-        input.value = "";
-
-        try {
-            const res = await fetch("/chatbot", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message })
-            });
-            const data = await res.json();
-            appendMessage(data.response || "Sorry, something went wrong.", "bot");
-        } catch (err) {
-            appendMessage("Error contacting the chatbot server.", "bot");
-            console.error(err);
+        function typeGreeting(text) {
+            const greeting = document.getElementById("greeting");
+            let index = 0;
+            greeting.innerHTML = "";
+            const typing = setInterval(() => {
+                if (index < text.length) {
+                    greeting.innerHTML += text[index++];
+                } else {
+                    clearInterval(typing);
+                }
+            }, 40);
         }
-    }
 
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") sendMessage();
-    });
+        const robot = document.getElementById("corner-robot");
+        const modal = document.getElementById("chatbot-modal");
+        const close = document.getElementById("chatbot-close");
 
-    // Particle background config
-    tsParticles.load("tsparticles", {
-        fullScreen: { enable: false },
-        particles: {
-            number: { value: 60, density: { enable: true, area: 800 } },
-            color: { value: "#007bff" },
-            shape: { type: "circle" },
-            opacity: { value: 0.5, random: true },
-            size: { value: 3, random: true },
-            move: {
-                enable: true,
-                speed: 1,
-                direction: "none",
-                outModes: { default: "out" }
-            },
-            links: {
-                enable: true,
-                distance: 150,
-                color: "#007bff",
-                opacity: 0.3,
-                width: 1
+        robot.addEventListener("click", () => {
+            modal.style.display = "flex";
+            gsap.fromTo(modal, { y: 100, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" });
+        });
+
+        close.addEventListener("click", () => {
+            gsap.to(modal, { y: 100, opacity: 0, duration: 0.4, ease: "power3.in", onComplete: () => modal.style.display = "none" });
+        });
+
+        const input = document.getElementById("chatbot-input");
+        const sendBtn = document.getElementById("chatbot-send");
+        const chatBody = document.getElementById("chatbot-body");
+
+        function appendMessage(text, sender) {
+            const msg = document.createElement("div");
+            msg.textContent = text;
+            msg.classList.add("mb-2");
+            msg.style.textAlign = sender === "user" ? "right" : "left";
+            msg.style.color = sender === "user" ? "#007bff" : "#333";
+            chatBody.appendChild(msg);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = input.value.trim();
+            if (!message) return;
+
+            appendMessage(message, "user");
+            input.value = "";
+
+            // Create bot message element for streaming
+            const botMsg = document.createElement("div");
+            botMsg.classList.add("mb-2");
+            botMsg.style.textAlign = "left";
+            botMsg.style.color = "#333";
+            chatBody.appendChild(botMsg);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            try {
+                const res = await fetch("/chatbot", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message })
+                });
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    botMsg.textContent += chunk;
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }
+            } catch (err) {
+                botMsg.textContent = "Error contacting the chatbot server.";
+                console.error(err);
             }
-        },
-        interactivity: {
-            events: {
-                onHover: { enable: true, mode: "repulse" },
-                onClick: { enable: true, mode: "push" }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        input.addEventListener("keypress", function (e) {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        // Particle background config
+        tsParticles.load("tsparticles", {
+            fullScreen: { enable: false },
+            particles: {
+                number: { value: 60, density: { enable: true, area: 800 } },
+                color: { value: "#007bff" },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                move: {
+                    enable: true,
+                    speed: 1,
+                    direction: "none",
+                    outModes: { default: "out" }
+                },
+                links: {
+                    enable: true,
+                    distance: 150,
+                    color: "#007bff",
+                    opacity: 0.3,
+                    width: 1
+                }
             },
-            modes: {
-                repulse: { distance: 100 },
-                push: { quantity: 4 }
-            }
-        },
-        detectRetina: true
-    });
-</script>
+            interactivity: {
+                events: {
+                    onHover: { enable: true, mode: "repulse" },
+                    onClick: { enable: true, mode: "push" }
+                },
+                modes: {
+                    repulse: { distance: 100 },
+                    push: { quantity: 4 }
+                }
+            },
+            detectRetina: true
+        });
+    </script>
 
 </body>
+
 </html>

@@ -31,23 +31,33 @@ Home - Finance Tracker
             </div>
         </div>
     </div>
-    <div class="col-md-6 mt-4">
+    <div class="col-md-4 mt-4">
         <div class="card border-primary hover-effect">
-            <div class="card-header text-center border-primary">
-                Amount Spent Each Day (This Month)
+            <div class="card-header text-center border-primary bg-primary text-white">
+                Daily Spending (This Month)
             </div>
             <div class="card-body">
-                <canvas id="dailySpendingChart" width="200" height="100"></canvas>
+                <canvas id="dailySpendingChart"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-md-6 mt-4">
-        <div class="card border-primary hover-effect">
-            <div class="card-header text-center border-primary">
-                Amount Spent Each Day (This Month)
+    <div class="col-md-4 mt-4">
+        <div class="card border-info hover-effect">
+            <div class="card-header text-center border-info bg-info text-white">
+                Monthly Spending Trend
             </div>
             <div class="card-body">
-                <canvas id="monthlySpendingChart" width="200" height="100"></canvas>
+                <canvas id="monthlySpendingChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mt-4">
+        <div class="card border-success hover-effect">
+            <div class="card-header text-center border-success bg-success text-white">
+                Spending by Category
+            </div>
+            <div class="card-body">
+                <canvas id="categorySpendingChart"></canvas>
             </div>
         </div>
     </div>
@@ -57,14 +67,18 @@ Home - Finance Tracker
     body {
         /* Light gradient background */
         background: linear-gradient(to bottom right, #E0F7FA, #B2EBF2);
-        color: #333; /* Dark text for contrast */
-        font-family: Arial, sans-serif; /* Optional: Set a font family */
+        color: #333;
+        /* Dark text for contrast */
+        font-family: Arial, sans-serif;
+        /* Optional: Set a font family */
     }
 
     /* Card styles */
     .card {
-        background-color: #ffffff; /* White background for cards */
-        border: 1px solid #e0e0e0; /* Light border for cards */
+        background-color: #ffffff;
+        /* White background for cards */
+        border: 1px solid #e0e0e0;
+        /* Light border for cards */
     }
 
     /* Hover effect for cards */
@@ -161,9 +175,38 @@ Home - Finance Tracker
         });
     }
 
+    // Function to fetch and render category spending chart
+    function fetchCategorySpendingData() {
+        fetch('/category_spending_data')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('categorySpendingChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.amounts,
+                            backgroundColor: [
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            });
+    }
+
     // Fetch data and render chart when the page loads
     document.addEventListener('DOMContentLoaded', () => {
         fetchDailySpendingData();
+        fetchMonthlySpendingData();
+        fetchCategorySpendingData();
     });
 </script>
 

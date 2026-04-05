@@ -1,182 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Particle.js -->
-    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" defer></script>
 
-    <style>
-        :root {
-            --oxford-blue: #0a1128;
-            --penn-blue: #001f54;
-            --indigo-dye: #034078;
-            --white: #fefcfb;
-        }
-        
-        .glass {
-            background: rgba(10, 17, 40, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(3, 64, 120, 0.3);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
-        
-        body {
-            background: linear-gradient(135deg, #0a1128, #001f54, #034078);
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        
-        .btn-gradient {
-            background: linear-gradient(90deg, #001f54, #034078);
-        }
-        
-        .btn-gradient:hover {
-            background: linear-gradient(90deg, #034078, #001f54);
-        }
-        
-        /* Particle.js Background */
-        #particles-js {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-    </style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Particle.js -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js" defer></script>
+
+  <style>
+    :root {
+      --oxford-blue: #0a1128;
+      --penn-blue: #001f54;
+      --indigo-dye: #034078;
+      --white: #fefcfb;
+    }
+
+    .glass {
+      background: rgba(10, 17, 40, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(3, 64, 120, 0.3);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a1128, #001f54, #034078);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(90deg, #001f54, #034078);
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(90deg, #034078, #001f54);
+    }
+
+    /* Particle.js Background */
+    #particles-js {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+  </style>
 </head>
+
 <body class="min-h-screen">
 
-    <!-- Particle.js Background -->
-    <div id="particles-js"></div>
+  <!-- Particle.js Background -->
+  <div id="particles-js"></div>
 
-    <div class="flex justify-center items-center min-h-screen p-4 relative z-10">
-        <div class="glass w-full max-w-md p-8 rounded-xl">
-            <h1 class="text-3xl font-bold text-white mb-6 text-center">Register</h1>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                {% for category, message in messages %}
-                  <div class="p-4 mb-4 rounded-lg {% if category == 'success' %}bg-green-800 text-green-100{% elif category == 'danger' %}bg-red-800 text-red-100{% elif category == 'warning' %}bg-yellow-800 text-yellow-100{% else %}bg-blue-800 text-blue-100{% endif %}">
-                    {{ message }}
-                  </div>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
+  <div class="flex justify-center items-center min-h-screen p-4 relative z-10">
+    <div class="glass w-full max-w-md p-8 rounded-xl">
+      <h1 class="text-3xl font-bold text-white mb-6 text-center">Register</h1>
 
-            <form action="{{ url_for('register') }}" method="post">
-                <div class="mb-4">
-                    <label for="username" class="block text-white text-sm font-medium mb-2">Username</label>
-                    <input type="text" id="username" name="username" required 
-                           class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
-                </div>
-                <div class="mb-4">
-                    <label for="email" class="block text-white text-sm font-medium mb-2">Email</label>
-                    <input type="email" id="email" name="email" required 
-                           class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
-                </div>
-                <div class="mb-4">
-                    <label for="phone" class="block text-white text-sm font-medium mb-2">Phone</label>
-                    <input type="tel" id="phone" name="phone" required 
-                           class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
-                </div>
-                <div class="mb-6">
-                    <label for="password" class="block text-white text-sm font-medium mb-2">Password</label>
-                    <input type="password" id="password" name="password" required 
-                           class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
-                </div>
-                <button type="submit" class="w-full px-4 py-2 text-white font-medium btn-gradient rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-800 focus:ring-white transition-all duration-300">
-                    Register
-                </button>
-            </form>
-            <p class="mt-6 text-center text-white text-opacity-80 text-sm">
-                Already have an account? 
-                <a href="{{ url_for('login') }}" class="font-medium text-white hover:text-white underline transition-colors">
-                    Login
-                </a>
-            </p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div
+        class="p-4 mb-4 rounded-lg {% if category == 'success' %}bg-green-800 text-green-100{% elif category == 'danger' %}bg-red-800 text-red-100{% elif category == 'warning' %}bg-yellow-800 text-yellow-100{% else %}bg-blue-800 text-blue-100{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <form action="{{ url_for('register') }}" method="post">
+        <div class="mb-4">
+          <label for="username" class="block text-white text-sm font-medium mb-2">Username</label>
+          <input type="text" id="username" name="username" required
+            class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
         </div>
+        <div class="mb-4">
+          <label for="email" class="block text-white text-sm font-medium mb-2">Email</label>
+          <input type="email" id="email" name="email" required
+            class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
+        </div>
+        <div class="mb-4">
+          <label for="phone" class="block text-white text-sm font-medium mb-2">Phone</label>
+          <input type="tel" id="phone" name="phone" required
+            class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
+        </div>
+        <div class="mb-6">
+          <label for="password" class="block text-white text-sm font-medium mb-2">Password</label>
+          <input type="password" id="password" name="password" required
+            class="w-full px-4 py-2 rounded-lg bg-black bg-opacity-20 border border-indigo-300 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent text-white placeholder-white placeholder-opacity-70">
+        </div>
+        <button type="submit"
+          class="w-full px-4 py-2 text-white font-medium btn-gradient rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-800 focus:ring-white transition-all duration-300">
+          Register
+        </button>
+      </form>
+      <p class="mt-6 text-center text-white text-opacity-80 text-sm">
+        Already have an account?
+        <a href="{{ url_for('login') }}" class="font-medium text-white hover:text-white underline transition-colors">
+          Login
+        </a>
+      </p>
     </div>
+  </div>
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            // Initialize Particle.js
-            particlesJS("particles-js", {
-                particles: {
-                    number: {
-                        value: 150,  // Increase number of particles
-                        density: {
-                            enable: true,
-                            value_area: 1000  // Spread out particles more
-                        }
-                    },
-                    shape: {
-                        type: "circle",
-                        stroke: {
-                            width: 0,
-                            color: "#ffffff"
-                        },
-                        polygon: {
-                            nb_sides: 5
-                        }
-                    },
-                    opacity: {
-                        value: 0.5,
-                        random: true,
-                        anim: {
-                            enable: true,
-                            speed: 1,
-                            opacity_min: 0.1,
-                            sync: false
-                        }
-                    },
-                    size: {
-                        value: 3,
-                        random: true,
-                        anim: {
-                            enable: false
-                        }
-                    },
-                    move: {
-                        enable: true,
-                        speed: 4,  // Increase speed of particles
-                        direction: "none",
-                        random: false,
-                        straight: false,
-                        out_mode: "out",
-                        bounce: false,
-                        attract: {
-                            enable: false
-                        }
-                    }
-                },
-                interactivity: {
-                    detect_on: "canvas",
-                    events: {
-                        onhover: {
-                            enable: true,
-                            mode: "repulse"  // Repulse effect on hover
-                        },
-                        onclick: {
-                            enable: true,
-                            mode: "push",  // Particles will multiply when clicked
-                            quantity: 10  // Number of particles to be added on click
-                        }
-                    }
-                },
-                retina_detect: true
-            });
-        });
-    </script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // Initialize Particle.js
+      particlesJS("particles-js", {
+        particles: {
+          number: {
+            value: 150,  // Increase number of particles
+            density: {
+              enable: true,
+              value_area: 1000  // Spread out particles more
+            }
+          },
+          shape: {
+            type: "circle",
+            stroke: {
+              width: 0,
+              color: "#ffffff"
+            },
+            polygon: {
+              nb_sides: 5
+            }
+          },
+          opacity: {
+            value: 0.5,
+            random: true,
+            anim: {
+              enable: true,
+              speed: 1,
+              opacity_min: 0.1,
+              sync: false
+            }
+          },
+          size: {
+            value: 3,
+            random: true,
+            anim: {
+              enable: false
+            }
+          },
+          move: {
+            enable: true,
+            speed: 4,  // Increase speed of particles
+            direction: "none",
+            random: false,
+            straight: false,
+            out_mode: "out",
+            bounce: false,
+            attract: {
+              enable: false
+            }
+          }
+        },
+        interactivity: {
+          detect_on: "canvas",
+          events: {
+            onhover: {
+              enable: true,
+              mode: "repulse"  // Repulse effect on hover
+            },
+            onclick: {
+              enable: true,
+              mode: "push",  // Particles will multiply when clicked
+              quantity: 10  // Number of particles to be added on click
+            }
+          }
+        },
+        retina_detect: true
+      });
+    });
+  </script>
 
 </body>
+
 </html>
