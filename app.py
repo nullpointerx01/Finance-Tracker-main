@@ -14,11 +14,19 @@ load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
 
 # --- Configure Gemini ---
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = None
+if GEMINI_API_KEY:
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        logging.error(f"Failed to initialize Gemini Client: {e}")
+else:
+    logging.warning("GEMINI_API_KEY not found. AI features will be disabled.")
 
 # --- Flask App Setup ---
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "track_secure_vault_7788")
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 
 # --- SQLite Database Setup ---
@@ -80,9 +88,13 @@ def chat():
         system_instruction = f"You are a helpful Financial Advisor for this Finance Tracker app. Below is a summary of the user's recent spending. Use this to provide personalized advice if asked. Keep responses concise and friendly."
         full_message = f"{system_instruction}\n{context}\nUser: {user_message}"
 
+        if not client:
+            yield "AI features are currently disabled. Please ensure the GEMINI_API_KEY is properly set in the Environment Variables."
+            return
+
         try:
             response_stream = client.models.generate_content_stream(
-                model='gemini-flash-latest',
+                model='gemini-2.0-flash',
                 contents=full_message
             )
             for chunk in response_stream:
@@ -310,7 +322,62 @@ def statistics():
             'statistics.html',
             total_expenses=round(total_expenses, 2),
             expense_by_category=expense_by_category,
+            previous_month_total=round(previous_month_total, 2),
+            current_month_total=round(current_month_total, 2),
+            difference=round(difference, 2),
+            percentage_change=percentage_change,
+            username=session.get('username')
         )
+    return redirect(url_for('login'))
+
+@app.route('/insights')
+def insights():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+        
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT amount, category, date FROM transactions WHERE user_id = ?", (user_id,))
+    raw_transactions = c.fetchall()
+    conn.close()
+    
+    if not raw_transactions:
+        return render_template('insights.html', username=session.get('username'), ai_text="No data found yet. Start tracking to see insights!", weekday_data=[0]*7)
+
+    total_expenses = sum(t[0] for t in raw_transactions)
+    category_totals = {}
+    weekday_spending = [0] * 7 # Mon-Sun
+    
+    for amount, category, date_str in raw_transactions:
+        category_totals[category] = category_totals.get(category, 0) + amount
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            weekday_spending[date_obj.weekday()] += amount
+        except: continue
+
+    ai_suggestion = "AI Intelligence is not configured. Please add GEMINI_API_KEY to your settings to enable this feature."
+    if client:
+        summary_str = f"Total Expense: ₹{total_expenses}. Categories: {category_totals}."
+        prompt = f"Analyze these user finances: {summary_str}. Provide 3 short, catchy financial tips and a Health Rating (Poor/Fair/Good/Excellent). Return as a friendly string with bullet points."
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt
+            )
+            ai_suggestion = response.text
+        except Exception as e:
+            ai_suggestion = "AI Analysis is currently unavailable. Please check back later!"
+            logging.error(f"Gemini Insights Error: {str(e)}")
+
+    return render_template(
+        'insights.html',
+        username=session.get('username'),
+        total_expenses=round(total_expenses, 2),
+        ai_text=ai_suggestion,
+        weekday_data=weekday_spending,
+        category_summary=sorted(category_totals.items(), key=lambda x: x[1], reverse=True)[:3]
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
