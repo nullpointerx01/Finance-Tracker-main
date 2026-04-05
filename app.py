@@ -11,7 +11,7 @@ import requests
 logging.basicConfig(level=logging.DEBUG)
 
 # --- Configure Gemini ---
-api_key = "AIzaSyD-Iu29MM0A19TcmQvFh3v6wJR_C-IivRU"
+api_key = "AIzaSyALv42q7DQmYPdLkOLAOzOeZvxl_YrZsuU"
 configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
