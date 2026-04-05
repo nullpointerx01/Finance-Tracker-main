@@ -27,11 +27,8 @@ else:
 # --- Flask App Setup ---
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "track_secure_vault_7788")
-RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
-RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
-
-if not RECAPTCHA_SITE_KEY or not RECAPTCHA_SECRET_KEY:
-    logging.warning("RECAPTCHA_SITE_KEY or RECAPTCHA_SECRET_KEY not set. Captcha will fail on production.")
+RECAPTCHA_SITE_KEY = "6LeOyxgrAAAAAAcWhZHPUX_MtCDGpOOLoEDh5Lsa"
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "6LeOyxgrAAAAAFX0P_qVbI-7G-SgQ2YhZb_12a7R")
 
 # --- SQLite Database Setup ---
 DATABASE = 'finance_tracker.db'
