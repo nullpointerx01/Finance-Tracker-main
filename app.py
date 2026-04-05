@@ -27,8 +27,11 @@ else:
 # --- Flask App Setup ---
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "track_secure_vault_7788")
-RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "6LeOyxgrAAAAAAcWhZHPUX_MtCDGpOOLoEDh5Lsa")
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY")
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
+
+if not RECAPTCHA_SITE_KEY or not RECAPTCHA_SECRET_KEY:
+    logging.warning("RECAPTCHA_SITE_KEY or RECAPTCHA_SECRET_KEY not set. Captcha will fail on production.")
 
 # --- SQLite Database Setup ---
 DATABASE = 'finance_tracker.db'
@@ -114,6 +117,16 @@ def login():
         
         if not is_localhost:
             recaptcha_response = request.form.get('g-recaptcha-response')
+            
+            if not RECAPTCHA_SECRET_KEY:
+                logging.error("RECAPTCHA_SECRET_KEY is missing. Verification will always fail.")
+                flash('Captcha service is not configured on the server. Please contact support.', 'danger')
+                return redirect(url_for('login'))
+
+            if not recaptcha_response:
+                flash('Please complete the Captcha to continue.', 'danger')
+                return redirect(url_for('login'))
+
             payload = {
                 'secret': RECAPTCHA_SECRET_KEY,
                 'response': recaptcha_response
@@ -124,10 +137,15 @@ def login():
                 logging.debug(f"ReCaptcha verification result: {result}")
                 if not result.get('success'):
                     error_codes = result.get('error-codes', [])
-                    flash(f'Invalid CAPTCHA: {", ".join(error_codes)}. Please try again.', 'danger')
+                    msg = "Invalid CAPTCHA."
+                    if 'invalid-input-response' in error_codes:
+                        msg += " (Possible key mismatch or expired token)."
+                    flash(f'{msg} Please try again.', 'danger')
                     return redirect(url_for('login'))
             except Exception as e:
-                logging.error(f"ReCaptcha error: {str(e)}")
+                logging.error(f"ReCaptcha communication error: {str(e)}")
+                flash('Communication error with Captcha service. Please try again.', 'danger')
+                return redirect(url_for('login'))
                 # Optionally handle connection errors here
         
         username = request.form['username']
@@ -173,6 +191,28 @@ def logout():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # ReCaptcha for Registration
+        if not is_localhost:
+            recaptcha_response = request.form.get('g-recaptcha-response')
+            if not RECAPTCHA_SECRET_KEY:
+                logging.error("RECAPTCHA_SECRET_KEY is missing at registration.")
+                flash('Captcha service not configured.', 'danger')
+                return redirect(url_for('register'))
+            
+            if not recaptcha_response:
+                flash('Please complete the Captcha.', 'danger')
+                return redirect(url_for('register'))
+
+            payload = {'secret': RECAPTCHA_SECRET_KEY, 'response': recaptcha_response}
+            try:
+                r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+                if not r.json().get('success'):
+                    flash('Invalid CAPTCHA. Please try again.', 'danger')
+                    return redirect(url_for('register'))
+            except:
+                flash('Error connecting to Captcha service.', 'danger')
+                return redirect(url_for('register'))
+
         username = request.form['username']
         email = request.form['email']
         phone = request.form['phone']
