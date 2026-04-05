@@ -162,6 +162,7 @@ def logout():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        is_localhost = request.host.split(':')[0] in ['localhost', '127.0.0.1']
         # ReCaptcha Shadow Skip for Registration
         if not is_localhost:
             logging.debug("ReCaptcha Shadow Skip (Register) Active.")
