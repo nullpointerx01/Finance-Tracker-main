@@ -28,7 +28,8 @@
             </div>
             <div class="ai-response-container p-3 rounded" style="background: rgba(0,0,0,0.2); min-height: 100px;">
                 <p id="ai-text-display" class="mb-0 text-white-50 leading-relaxed" style="white-space: pre-line;">
-                   {{ ai_text | safe }}
+                   <span id="ai-status"><i class="fas fa-spinner fa-spin me-2"></i> Jarvis is analyzing your data...</span>
+                   <span id="ai-content" style="display:none;">{{ ai_text | safe }}</span>
                 </p>
             </div>
             <div class="mt-3 text-end">
@@ -73,18 +74,26 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // AI Typewriter Effect
+        const statusElement = document.getElementById("ai-status");
+        const contentElement = document.getElementById("ai-content");
         const textElement = document.getElementById("ai-text-display");
-        const originalText = textElement.textContent;
-        textElement.textContent = "";
-        let i = 0;
-        const type = () => {
-            if (i < originalText.length) {
-                textElement.textContent += originalText.charAt(i);
-                i++;
-                setTimeout(type, 10);
-            }
-        };
-        type();
+        const originalText = contentElement.textContent.trim();
+        
+        setTimeout(() => {
+            statusElement.style.display = "none";
+            contentElement.style.display = "inline";
+            contentElement.textContent = "";
+            
+            let i = 0;
+            const typeResource = () => {
+                if (i < originalText.length) {
+                    contentElement.textContent += originalText.charAt(i);
+                    i++;
+                    setTimeout(typeResource, 10);
+                }
+            };
+            typeResource();
+        }, 1500);
 
         // GSAP Animations
         gsap.from(".animate-insights .col-12", { opacity: 0, y: -30, duration: 1, ease: "power4.out" });

@@ -209,20 +209,26 @@ def transactions():
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():
     if 'username' in session:
-        user_id = session['user_id']
-        date = request.form['date']
-        category = request.form['category']
-        amount = float(request.form['amount'])
-        payment_method = request.form['payment_method']
-        description = request.form['notes']
-        conn = sqlite3.connect(DATABASE)
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO transactions (user_id, amount, category, date, description, payment_method)
-            VALUES (?, ?, ?, ?, ?, ?)''', (user_id, amount, category, date, description, payment_method))
-        conn.commit()
-        conn.close()
-        return redirect(url_for('transactions'))
+        try:
+            user_id = session['user_id']
+            date = request.form['date']
+            category = request.form['category']
+            amount = float(request.form['amount'])
+            payment_method = request.form['payment_method']
+            description = request.form['notes']
+            conn = sqlite3.connect(DATABASE)
+            c = conn.cursor()
+            c.execute('''
+                INSERT INTO transactions (user_id, amount, category, date, description, payment_method)
+                VALUES (?, ?, ?, ?, ?, ?)''', (user_id, amount, category, date, description, payment_method))
+            conn.commit()
+            conn.close()
+            flash('Transaction added successfully!', 'success')
+            return redirect(url_for('transactions'))
+        except Exception as e:
+            logging.error(f"Transaction addition error: {str(e)}")
+            flash('Failed to add transaction. Please check your inputs.', 'error')
+            return redirect(url_for('transactions'))
     return redirect(url_for('login'))
 
 @app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
@@ -362,34 +368,46 @@ def insights():
             weekday_spending[date_obj.weekday()] += amount
         except: continue
 
-    ai_suggestion = "AI Intelligence is not configured. Please add a valid GEMINI_API_KEY to your settings to enable this."
-    if client:
-        summary_str = f"Total Expense: ₹{total_expenses}. Categories: {category_totals}."
-        prompt = f"Analyze these user finances: {summary_str}. Provide 3 short, catchy financial tips and a Health Rating (Poor/Fair/Good/Excellent). Return as a friendly string with bullet points."
-        try:
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview",
-                contents=prompt
-            )
-            ai_suggestion = response.text
-        except Exception as e:
-            error_msg = str(e)
-            if "exhausted" in error_msg.lower() or "quota" in error_msg.lower():
-                ai_suggestion = "AI quota exceeded! Please wait a moment or check your API limit at Google AI Studio."
-            elif "401" in error_msg or "403" in error_msg:
-                ai_suggestion = "Invalid API Key. Please update your GEMINI_API_KEY in the .env settings."
-            else:
-                ai_suggestion = "AI Analysis is currently unavailable. (Technical Error: " + error_msg[:30] + "...)"
-            logging.error(f"Gemini Insights Error: {str(e)}")
+    try:
+        ai_suggestion = "AI Intelligence is not configured. Please add a valid GEMINI_API_KEY to your settings to enable this."
+        if client:
+            summary_str = f"Total Expense: ₹{total_expenses}. Categories: {category_totals}."
+            prompt = f"Analyze these user finances: {summary_str}. Provide 3 short, catchy financial tips and a Health Rating (Poor/Fair/Good/Excellent). Return as a friendly string with bullet points."
+            try:
+                response = client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=prompt
+                )
+                ai_suggestion = response.text
+            except Exception as e:
+                error_msg = str(e).lower()
+                if "exhausted" in error_msg or "quota" in error_msg:
+                    ai_suggestion = "🤖 AI quota exceeded! We've loaded your spending charts below, but your custom tips will be available again soon."
+                elif "401" in error_msg or "403" in error_msg:
+                    ai_suggestion = "🤖 Invalid API Key! Please check your GEMINI_API_KEY settings."
+                else:
+                    ai_suggestion = "🤖 AI Analysis is temporarily resting. Your charts are updated and ready below!"
+                logging.error(f"Gemini Insights Error: {str(e)}")
 
-    return render_template(
-        'insights.html',
-        username=session.get('username'),
-        total_expenses=round(total_expenses, 2),
-        ai_text=ai_suggestion,
-        weekday_data=weekday_spending,
-        category_summary=sorted(category_totals.items(), key=lambda x: x[1], reverse=True)[:3]
-    )
+        return render_template(
+            'insights.html',
+            username=session.get('username'),
+            total_expenses=round(total_expenses, 2),
+            ai_text=ai_suggestion,
+            weekday_data=weekday_spending,
+            category_summary=sorted(category_totals.items(), key=lambda x: x[1], reverse=True)[:3]
+        )
+    except Exception as e:
+        logging.error(f"Full Insights Route Crash: {str(e)}")
+        return render_template('error.html', code=500, message="An error occurred while loading your Intelligence dashboard. Please try again later.")
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html', code=404, message="The page you're searching for has been lost in the financial cloud."), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('error.html', code=500, message="Our systems encountered a rare anomaly. We're on it!"), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

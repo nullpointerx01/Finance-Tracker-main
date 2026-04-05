@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}System Error - T₹ACK{% endblock %}
+
+{% block content %}
+<style>
+    .error-container {
+        height: 70vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+    .error-code {
+        font-size: 8rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #00bfff 0%, #007bff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0;
+        line-height: 1;
+    }
+    .error-msg {
+        font-size: 1.5rem;
+        color: rgba(255,255,255,0.7);
+        margin-bottom: 2rem;
+    }
+    .glitch-robot {
+        width: 120px;
+        filter: grayscale(1) invert(1) brightness(0.8);
+        opacity: 0.5;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="error-container animate-fade-in">
+    <img src="{{ url_for('static', filename='robot.gif') }}" class="glitch-robot" alt="Error Robot">
+    <h1 class="error-code">{{ code if code else '500' }}</h1>
+    <p class="error-msg">{{ message if message else 'A financial anomaly has occurred. Our team is investigating.' }}</p>
+    <div>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-info btn-lg px-5 border-2 rounded-pill">
+            <i class="fas fa-home me-2"></i> Return to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        gsap.from(".error-container", { opacity: 0, scale: 0.9, duration: 1, ease: "back.out(1.7)" });
+    });
+</script>
+{% endblock %}
