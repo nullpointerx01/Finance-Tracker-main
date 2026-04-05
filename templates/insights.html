@@ -98,7 +98,7 @@
         });
 
         // Weekday Spending Chart
-        const weekdayData = {{ weekday_data | tojson | safe }};
+        const weekdayData = JSON.parse('{{ weekday_data | tojson | safe }}');
         const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
         const ctx = document.getElementById('weekdayChart').getContext('2d');

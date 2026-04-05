@@ -27,6 +27,7 @@ else:
 # --- Flask App Setup ---
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "track_secure_vault_7788")
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "6LeOyxgrAAAAAAcWhZHPUX_MtCDGpOOLoEDh5Lsa")
 RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY")
 
 # --- SQLite Database Setup ---
@@ -120,8 +121,10 @@ def login():
             try:
                 r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
                 result = r.json()
+                logging.debug(f"ReCaptcha verification result: {result}")
                 if not result.get('success'):
-                    flash('Invalid CAPTCHA. Please try again.', 'danger')
+                    error_codes = result.get('error-codes', [])
+                    flash(f'Invalid CAPTCHA: {", ".join(error_codes)}. Please try again.', 'danger')
                     return redirect(url_for('login'))
             except Exception as e:
                 logging.error(f"ReCaptcha error: {str(e)}")
@@ -142,7 +145,7 @@ def login():
         else:
             flash('Invalid username or password. Please try again.', 'error')
     is_localhost = request.host.split(':')[0] in ['localhost', '127.0.0.1']
-    return render_template('login.html', skip_captcha=is_localhost)
+    return render_template('login.html', skip_captcha=is_localhost, recaptcha_site_key=RECAPTCHA_SITE_KEY)
 
 @app.route('/')
 def index():
@@ -186,7 +189,9 @@ def register():
             flash('Registration successful! Please log in.', 'success')
         conn.close()
         return redirect(url_for('login'))
-    return render_template('register.html')
+    
+    is_localhost = request.host.split(':')[0] in ['localhost', '127.0.0.1']
+    return render_template('register.html', skip_captcha=is_localhost, recaptcha_site_key=RECAPTCHA_SITE_KEY)
 
 @app.route('/transactions')
 def transactions():
