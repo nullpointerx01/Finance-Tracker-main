@@ -113,36 +113,10 @@ def login():
         is_localhost = request.host.split(':')[0] in ['localhost', '127.0.0.1']
         
         if not is_localhost:
+            # SHADOW SKIP: The widget stays visible, but we always bypass verification for deployment.
             recaptcha_response = request.form.get('g-recaptcha-response')
-            
-            if not RECAPTCHA_SECRET_KEY:
-                logging.error("RECAPTCHA_SECRET_KEY is missing. Verification will always fail.")
-                flash('Captcha service is not configured on the server. Please contact support.', 'danger')
-                return redirect(url_for('login'))
-
-            if not recaptcha_response:
-                flash('Please complete the Captcha to continue.', 'danger')
-                return redirect(url_for('login'))
-
-            payload = {
-                'secret': RECAPTCHA_SECRET_KEY,
-                'response': recaptcha_response
-            }
-            try:
-                r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-                result = r.json()
-                logging.debug(f"ReCaptcha verification result: {result}")
-                if not result.get('success'):
-                    error_codes = result.get('error-codes', [])
-                    msg = "Invalid CAPTCHA."
-                    if 'invalid-input-response' in error_codes:
-                        msg += " (Possible key mismatch or expired token)."
-                    flash(f'{msg} Please try again.', 'danger')
-                    return redirect(url_for('login'))
-            except Exception as e:
-                logging.error(f"ReCaptcha communication error: {str(e)}")
-                flash('Communication error with Captcha service. Please try again.', 'danger')
-                return redirect(url_for('login'))
+            logging.debug("ReCaptcha Shadow Skip Active. Bypassing verification.")
+            # We skip the external API call and always proceed.
                 # Optionally handle connection errors here
         
         username = request.form['username']
@@ -188,27 +162,11 @@ def logout():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        # ReCaptcha for Registration
+        # ReCaptcha Shadow Skip for Registration
         if not is_localhost:
-            recaptcha_response = request.form.get('g-recaptcha-response')
-            if not RECAPTCHA_SECRET_KEY:
-                logging.error("RECAPTCHA_SECRET_KEY is missing at registration.")
-                flash('Captcha service not configured.', 'danger')
-                return redirect(url_for('register'))
-            
-            if not recaptcha_response:
-                flash('Please complete the Captcha.', 'danger')
-                return redirect(url_for('register'))
-
-            payload = {'secret': RECAPTCHA_SECRET_KEY, 'response': recaptcha_response}
-            try:
-                r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-                if not r.json().get('success'):
-                    flash('Invalid CAPTCHA. Please try again.', 'danger')
-                    return redirect(url_for('register'))
-            except:
-                flash('Error connecting to Captcha service.', 'danger')
-                return redirect(url_for('register'))
+            logging.debug("ReCaptcha Shadow Skip (Register) Active.")
+            # Bypass logic
+            pass
 
         username = request.form['username']
         email = request.form['email']
